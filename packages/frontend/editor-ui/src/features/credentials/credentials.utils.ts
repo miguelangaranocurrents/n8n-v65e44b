@@ -39,9 +39,15 @@ export function getAutoSelectedCredential(
 	);
 
 	const allOptions = credentialTypesNodeDescriptionDisplayed.value.flatMap((type) => type.options);
-	if (allOptions.length === 0) return undefined;
+	// Credentials that reach the node only through the personal route (sharedRoute
+	// 'personal') stay listed in the dropdown under "Available to you", but the
+	// workflow's project does not own them — auto-assigning one would surprise
+	// the project's other members, so only project-route (and global) ones are
+	// candidates. Options without a route (host-supplied lists) stay eligible.
+	const candidates = allOptions.filter((option) => option.sharedRoute !== 'personal');
+	if (candidates.length === 0) return undefined;
 
-	const mostRecent = allOptions.reduce((a, b) => (a.updatedAt > b.updatedAt ? a : b));
+	const mostRecent = candidates.reduce((a, b) => (a.updatedAt > b.updatedAt ? a : b));
 	return {
 		credentialType: mostRecent.type,
 		credential: { id: mostRecent.id, name: mostRecent.name },
